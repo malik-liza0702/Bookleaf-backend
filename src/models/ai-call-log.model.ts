@@ -1,0 +1,45 @@
+import { Schema, model, type Types } from 'mongoose';
+import { AI_CALL_KINDS, type AiCallKind } from '../domain/enums.js';
+
+/**
+ * One document per AI call (success, or final failure after retries).
+ * This is the evidence for cost awareness: tokens in/out, implicit-cache hits
+ * and latency per model, aggregated by GET /admin/ai-usage.
+ */
+export interface AiCallLogDoc {
+  _id: Types.ObjectId;
+  ticketId: Types.ObjectId | null;
+  kind: AiCallKind;
+  model: string;
+  inputTokens: number;
+  outputTokens: number;
+  cacheReadTokens: number;
+  /** Priced at call time with the AI module's dated price table; null if the model is unknown. */
+  estimatedCostUsd: number | null;
+  latencyMs: number;
+  success: boolean;
+  errorCode: string | null;
+  createdAt: Date;
+}
+
+const aiCallLogSchema = new Schema<AiCallLogDoc>(
+  {
+    ticketId: { type: Schema.Types.ObjectId, ref: 'Ticket', default: null },
+    kind: { type: String, enum: AI_CALL_KINDS, required: true },
+    model: { type: String, required: true },
+    inputTokens: { type: Number, default: 0 },
+    outputTokens: { type: Number, default: 0 },
+    cacheReadTokens: { type: Number, default: 0 },
+    estimatedCostUsd: { type: Number, default: null },
+    latencyMs: { type: Number, required: true },
+    success: { type: Boolean, required: true },
+    errorCode: { type: String, default: null },
+  },
+  { timestamps: { createdAt: true, updatedAt: false } },
+);
+
+aiCallLogSchema.index({ createdAt: -1 });
+aiCallLogSchema.index({ ticketId: 1 });
+aiCallLogSchema.index({ kind: 1, createdAt: -1 });
+
+export const AiCallLogModel = model<AiCallLogDoc>('AiCallLog', aiCallLogSchema);
