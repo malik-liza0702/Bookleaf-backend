@@ -1,19 +1,14 @@
 import { Schema, model, type Types } from 'mongoose';
 
-/**
- * Books live in their own collection (not embedded in authors) because admins
- * query them across authors and tickets reference them individually.
- * Money is whole rupees, as in the dataset.
- */
 export interface BookDoc {
   _id: Types.ObjectId;
-  bookId: string; // business key, e.g. BK001
-  authorId: string; // AUTH001
+  bookId: string;
+  authorId: string;
   title: string;
   isbn: string;
   genre: string;
   publicationDate: Date | null;
-  status: string; // free text, e.g. "In Production - Cover Design"
+  status: string;
   mrp: number | null;
   authorRoyaltyPerCopy: number | null;
   totalCopiesSold: number;

@@ -1,11 +1,6 @@
 import { Schema, model, type Types } from 'mongoose';
 import { AI_CALL_KINDS, type AiCallKind } from '../domain/enums.js';
 
-/**
- * One document per AI call (success, or final failure after retries).
- * This is the evidence for cost awareness: tokens in/out, implicit-cache hits
- * and latency per model, aggregated by GET /admin/ai-usage.
- */
 export interface AiCallLogDoc {
   _id: Types.ObjectId;
   ticketId: Types.ObjectId | null;
@@ -14,7 +9,6 @@ export interface AiCallLogDoc {
   inputTokens: number;
   outputTokens: number;
   cacheReadTokens: number;
-  /** Priced at call time with the AI module's dated price table; null if the model is unknown. */
   estimatedCostUsd: number | null;
   latencyMs: number;
   success: boolean;

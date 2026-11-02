@@ -2,11 +2,6 @@ import { z } from 'zod';
 import type { AiConfig } from '../ai/index.js';
 import { DEFAULT_DB_NAME } from '../lib/db.js';
 
-/**
- * All configuration comes from environment variables, validated once at boot.
- * The process refuses to start with a clear message if something required is
- * missing, instead of failing later on the first request that needs it.
- */
 const envSchema = z.object({
   NODE_ENV: z.enum(['development', 'test', 'production']).default('development'),
   PORT: z.coerce.number().int().positive().default(4000),
@@ -36,7 +31,6 @@ const envSchema = z.object({
   REPLY_RATE_LIMIT_MAX: z.coerce.number().int().positive().default(20),
   REPLY_RATE_LIMIT_WINDOW_MS: z.coerce.number().int().positive().default(15 * 60 * 1000),
 
-  // Empty string is treated as "not set" so `GEMINI_API_KEY=` in .env means degraded mode.
   GEMINI_API_KEY: z
     .string()
     .optional()

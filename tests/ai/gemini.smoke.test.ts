@@ -2,11 +2,6 @@ import { describe, expect, it } from 'vitest';
 import { createAiService, estimateCostUsd, type AiUsage } from '../../src/ai/index.js';
 import { book } from './helpers.js';
 
-/**
- * Real Gemini calls. Skipped unless GEMINI_API_KEY is set, e.g.
- *   GEMINI_API_KEY=... npx vitest run tests/ai/gemini.smoke.test.ts
- * Prints token usage and estimated cost (never the key).
- */
 const apiKey = process.env.GEMINI_API_KEY;
 const classifyModel = process.env.AI_CLASSIFY_MODEL ?? 'gemini-3.5-flash-lite';
 const draftModel = process.env.AI_DRAFT_MODEL ?? 'gemini-3.8-flash';

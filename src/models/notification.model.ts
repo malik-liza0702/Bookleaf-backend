@@ -6,11 +6,6 @@ import {
   type TicketStatus,
 } from '../domain/enums.js';
 
-/**
- * One document per thing an author should hear about. The ticket number and
- * subject are copied in (like the admin name on a reply) so rendering the list
- * needs no lookups. Only author-visible data belongs here.
- */
 export interface NotificationDoc {
   _id: Types.ObjectId;
   user: Types.ObjectId;
@@ -18,7 +13,6 @@ export interface NotificationDoc {
   type: NotificationType;
   ticketNumber: number;
   subject: string;
-  /** The new status if this event changed it, otherwise null. */
   status: TicketStatus | null;
   readAt: Date | null;
   createdAt: Date;
@@ -37,7 +31,7 @@ const notificationSchema = new Schema<NotificationDoc>(
   { timestamps: { createdAt: true, updatedAt: false } },
 );
 
-notificationSchema.index({ user: 1, createdAt: -1 }); // the author's list, newest first
-notificationSchema.index({ user: 1, readAt: 1 }); // unread count and mark-as-read
+notificationSchema.index({ user: 1, createdAt: -1 });
+notificationSchema.index({ user: 1, readAt: 1 });
 
 export const NotificationModel = model<NotificationDoc>('Notification', notificationSchema);

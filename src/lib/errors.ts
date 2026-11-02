@@ -1,8 +1,3 @@
-/**
- * Every error the API returns uses one of these codes, each with a fixed HTTP
- * status (see API_CONTRACT.md). Services throw AppError; the error handler
- * turns it into `{ error: { code, message, details? } }`.
- */
 export const ERROR_STATUS = {
   VALIDATION_ERROR: 400,
   UNAUTHENTICATED: 401,

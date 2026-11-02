@@ -3,13 +3,6 @@ import type { TicketFacts } from '../facts.js';
 import { TICKET_CATEGORIES, TICKET_PRIORITIES } from '../types.js';
 import { sanitizeAttribute, sanitizeUntrusted } from '../untrusted.js';
 
-/**
- * Classification prompt. Cost decision: no knowledge base here. Category
- * definitions, a priority rubric and six short examples are enough to triage,
- * and they live in the system instruction, which is byte-identical on every
- * call. The per-ticket part is just the ticket plus a few book facts.
- */
-
 export const CLASSIFICATION_SYSTEM_PROMPT = `You are the triage assistant for BookLeaf Publishing's author support desk (a self-publishing company in India and the US). You read one author support ticket and return its category and priority as JSON. You never reply to the author.
 
 ## Categories (choose exactly one)
@@ -58,7 +51,6 @@ Use <book_facts>: if the royalty status is "possibly_overdue", a royalty complai
 <ticket><subject>Update my bio</subject><description>Can I change the author bio on my book page? I have a new website.</description></ticket>
 {"reasoning":"Simple metadata update request with no impact on sales or payments.","category":"General Inquiry","priority":"Low","confidence":0.9}`;
 
-/** Model output schema. `reasoning` comes first so the model states its evidence before committing. */
 export const CLASSIFICATION_SCHEMA: JsonSchema = {
   type: 'object',
   properties: {
@@ -73,7 +65,6 @@ export const CLASSIFICATION_SCHEMA: JsonSchema = {
 const MAX_SUBJECT_CHARS = 200;
 const MAX_DESCRIPTION_CHARS = 3000;
 
-/** A few lines of book context: enough to judge urgency, far cheaper than the full record. */
 export function renderBookFactsForClassification(facts: TicketFacts): string {
   const book = facts.book;
   if (!book) return 'No specific book selected (general or account-level ticket).';

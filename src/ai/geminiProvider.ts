@@ -17,16 +17,6 @@ import {
   type ThinkingEffort,
 } from './provider.js';
 
-/**
- * Google Gemini implementation of AiProvider (generateContent API).
- *
- * Deliberately NOT set:
- * - temperature/topP/topK: deprecated and ignored on Gemini 3.x (Google asks
- *   callers to remove them). Determinism for classification comes from the
- *   enum-constrained JSON schema instead.
- * - SDK retries: the SDK only retries when retryOptions is passed; retries live
- *   in retry.ts so they are observable and testable with a fake provider.
- */
 export class GeminiProvider implements AiProvider {
   readonly name = 'gemini';
   private readonly client: GoogleGenAI;
@@ -63,7 +53,6 @@ export class GeminiProvider implements AiProvider {
     return readResponse(response);
   }
 
-  /** Maps SDK/network errors to ProviderError. Messages are scrubbed of the key and truncated. */
   private mapError(err: unknown): ProviderError {
     const raw = err instanceof Error ? err.message : String(err);
     const message = scrub(raw, this.apiKey);
@@ -88,7 +77,6 @@ export class GeminiProvider implements AiProvider {
     if (err instanceof Error && err.name === 'AbortError') {
       return new ProviderError('TIMEOUT', 'Gemini request aborted (timeout)', { retryable: true });
     }
-    // fetch() network failures (DNS, connection reset) surface as TypeError.
     return new ProviderError('UNAVAILABLE', `Gemini network error: ${message}`, { retryable: true });
   }
 }
@@ -103,7 +91,6 @@ function readResponse(response: GenerateContentResponse): ProviderResult {
   const candidate = response.candidates?.[0];
   const finishReason = candidate?.finishReason;
   if (finishReason !== FinishReason.STOP) {
-    // MAX_TOKENS means a truncated answer: never pass half a draft or half a JSON object on.
     const code = finishReason === FinishReason.MAX_TOKENS || !finishReason ? 'INVALID_OUTPUT' : 'BLOCKED';
     throw new ProviderError(code, `Gemini stopped with finishReason=${finishReason ?? 'none'}`, { usage });
   }
@@ -117,16 +104,11 @@ function readUsage(response: GenerateContentResponse): ProviderUsage {
   const meta = response.usageMetadata;
   return {
     inputTokens: meta?.promptTokenCount ?? 0,
-    // Thinking tokens are billed at the output rate, so they count as output here.
     outputTokens: (meta?.candidatesTokenCount ?? 0) + (meta?.thoughtsTokenCount ?? 0),
     cacheReadTokens: meta?.cachedContentTokenCount ?? 0,
   };
 }
 
-/**
- * Gemini 3.x uses thinkingLevel; 2.x uses a token budget. Non-lite 3.x Flash
- * models reject MINIMAL (documented for 3.8 Flash), so they get LOW instead.
- */
 export function thinkingConfigFor(model: string, effort: ThinkingEffort): ThinkingConfig {
   if (/^gemini-2\./.test(model)) {
     const budget = { minimal: 0, low: 512, medium: -1 }[effort];
@@ -141,7 +123,6 @@ export function thinkingConfigFor(model: string, effort: ThinkingEffort): Thinki
   return { thinkingLevel: level };
 }
 
-/** Gemini 429 bodies carry google.rpc.RetryInfo, e.g. "retryDelay": "17s". */
 export function parseRetryDelayMs(message: string): number | undefined {
   const match = /"retryDelay"\s*:\s*"(\d+(?:\.\d+)?)s"/.exec(message);
   return match?.[1] ? Math.ceil(Number(match[1]) * 1000) : undefined;

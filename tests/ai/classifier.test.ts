@@ -35,7 +35,7 @@ describe('classifyTicket (AI path)', () => {
     const [first, second] = provider.calls;
     expect(first!.system).toBe(CLASSIFICATION_SYSTEM_PROMPT);
     expect(second!.system).toBe(first!.system);
-    expect(first!.prompt).not.toContain('80/20'); // royalty policy text stays out of classification
+    expect(first!.prompt).not.toContain('80/20');
     expect(first!.maxOutputTokens).toBeLessThanOrEqual(512);
     expect(first!.thinking).toBe('minimal');
     expect('schema' in first! && first.schema).toBeTruthy();
@@ -57,7 +57,7 @@ describe('classifyTicket (AI path)', () => {
     const result = await service(provider).classifyTicket(ticket);
     expect(result.source).toBe('ai');
     expect(provider.calls).toHaveLength(2);
-    expect(result.usage?.inputTokens).toBe(1800); // both attempts are billed and reported
+    expect(result.usage?.inputTokens).toBe(1800);
   });
 
   it('rejects values outside the enums and falls back to rules after the retry', async () => {

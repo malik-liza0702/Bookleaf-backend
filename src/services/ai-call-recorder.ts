@@ -3,12 +3,6 @@ import type { AiCallKind } from '../domain/enums.js';
 import type { Logger } from '../lib/logger.js';
 import type { AiCallLogRepository } from '../repositories/ai-call-log.repository.js';
 
-/**
- * Writes one AiCallLog document per AI call from the module's usage/error
- * output. Logging must never break the request it describes, so failures to
- * write are logged and swallowed. Calls that never reached a model (no API
- * key configured) are not recorded: nothing was spent.
- */
 export class AiCallRecorder {
   constructor(
     private readonly logs: AiCallLogRepository,
@@ -21,7 +15,6 @@ export class AiCallRecorder {
     model: string;
     usage?: AiUsage;
     error?: Pick<AiCallError, 'code'>;
-    /** Wall-clock time measured by the caller, used when usage is absent. */
     elapsedMs: number;
   }): Promise<void> {
     if (params.error?.code === 'NO_API_KEY') return;

@@ -2,7 +2,6 @@ import jwt, { type SignOptions } from 'jsonwebtoken';
 import { z } from 'zod';
 import type { AuthUser } from '../types/express.js';
 
-/** JWT payload per the contract: { sub, role, authorId? }. */
 const payloadSchema = z.object({
   sub: z.string().min(1),
   role: z.enum(['author', 'admin']),
@@ -24,7 +23,6 @@ export class TokenService {
     });
   }
 
-  /** Returns the user for a valid token, or null if it is invalid, expired or malformed. */
   verify(token: string): AuthUser | null {
     try {
       const decoded = jwt.verify(token, this.secret, { algorithms: ['HS256'] });

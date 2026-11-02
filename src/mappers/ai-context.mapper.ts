@@ -2,7 +2,6 @@ import type { BookContext } from '../ai/index.js';
 import type { BookDoc } from '../models/book.model.js';
 import { toBookDto } from './book.mapper.js';
 
-/** The book facts the AI module receives. Only what it needs, nothing about other books. */
 export function toBookContext(book: BookDoc | null | undefined): BookContext | null {
   if (!book) return null;
   const dto = toBookDto(book);

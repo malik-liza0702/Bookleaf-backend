@@ -2,15 +2,8 @@ import type { TicketFacts } from './facts.js';
 import { SIGN_OFF } from './prompts/draft.js';
 import type { DraftInput } from './types.js';
 
-/**
- * Post-processing and lightweight fact checks on a generated draft. The admin
- * still reviews every draft; these checks point their attention at the parts a
- * model is most likely to get wrong: amounts and dates that came from nowhere.
- */
-
 const MONTHS = ['january', 'february', 'march', 'april', 'may', 'june', 'july', 'august', 'september', 'october', 'november', 'december'];
 
-/** Strip markdown emphasis/headings the model may add anyway and guarantee the sign-off. */
 export function normalizeDraft(text: string): string {
   let draft = text
     .replace(/\*\*(.+?)\*\*/g, '$1')
@@ -47,15 +40,10 @@ function numbersIn(value: unknown, out: Set<number>): Set<number> {
   return out;
 }
 
-/** Text the author (or staff) already wrote; amounts and dates quoted there are not invented. */
 export function authorTextOf(input: DraftInput): string {
   return [input.ticket.subject, input.ticket.description, ...input.thread.map((m) => m.message)].join('\n');
 }
 
-/**
- * Warnings for the admin: amounts or dates in the draft that are not in the
- * facts or in the author's own messages, and unfilled [confirm: …] placeholders.
- */
 export function checkDraft(draft: string, facts: TicketFacts, authorText: string): string[] {
   const warnings: string[] = [];
   const factsJson = JSON.stringify(facts);

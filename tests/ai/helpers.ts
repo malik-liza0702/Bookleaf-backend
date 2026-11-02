@@ -30,7 +30,6 @@ const dataset = JSON.parse(
   readFileSync(fileURLToPath(new URL('../../data/bookleaf_sample_data.json', import.meta.url)), 'utf8'),
 ) as { authors: { name: string; books: RawBook[] }[] };
 
-/** Dataset book mapped the way the core passes it to the AI module. */
 export function book(bookId: string): BookContext {
   const raw = dataset.authors.flatMap((a) => a.books).find((b) => b.book_id === bookId);
   if (!raw) throw new Error(`No book ${bookId} in dataset`);
@@ -57,7 +56,6 @@ export const allBookIds = (): string[] => dataset.authors.flatMap((a) => a.books
 
 type Step = ProviderResult | ProviderError | ((req: GenerateRequest) => ProviderResult | ProviderError);
 
-/** Scripted provider: each call consumes the next step; the last step repeats. Records every request. */
 export class FakeProvider implements AiProvider {
   readonly name = 'fake';
   readonly calls: (GenerateRequest | GenerateJsonRequest)[] = [];

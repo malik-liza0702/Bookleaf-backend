@@ -1,12 +1,5 @@
 import type { TicketCategory } from './types.js';
 
-/**
- * The BookLeaf Knowledge Base, split into sections so a prompt only carries what
- * the ticket needs. Text is verbatim from data/knowledge_base_source.md (a test
- * guards against drift). It is embedded rather than read from disk so the
- * compiled build has no runtime file dependency.
- */
-
 export type KbSectionId =
   | 'companyOverview'
   | 'royaltyPolicy'
@@ -94,7 +87,6 @@ export const KB_SECTIONS: Record<KbSectionId, KbSection> = {
   },
 };
 
-/** Production pipeline in order, parsed once from the KB text. */
 export const PRODUCTION_STAGES: readonly string[] = [
   'Manuscript Received',
   'Editing',
@@ -118,7 +110,6 @@ export interface KbSample {
   guidance: string;
 }
 
-/** "Sample Query → Expected Response" rows, used as per-category style anchors. */
 export const KB_SAMPLES: readonly KbSample[] = [
   {
     category: 'Royalty & Payments',
@@ -164,7 +155,6 @@ export const KB_SAMPLES: readonly KbSample[] = [
   },
 ];
 
-/** Primary policy section(s) per category. General Inquiry relies on the overview + samples. */
 const SECTIONS_BY_CATEGORY: Record<TicketCategory, readonly KbSectionId[]> = {
   'Royalty & Payments': ['royaltyPolicy'],
   'ISBN & Metadata Issues': ['isbnPolicy'],
@@ -174,7 +164,6 @@ const SECTIONS_BY_CATEGORY: Record<TicketCategory, readonly KbSectionId[]> = {
   'General Inquiry': [],
 };
 
-/** Strong signals that a ticket also touches another policy area. */
 const SECONDARY_TRIGGERS: readonly { section: KbSectionId; pattern: RegExp }[] = [
   { section: 'royaltyPolicy', pattern: /\broyalt|\bpayout|\bpayment|\bpaid\b|₹|\brs\.?\s?\d|\binr\b/i },
   { section: 'isbnPolicy', pattern: /\bisbn\b/i },
@@ -183,14 +172,8 @@ const SECONDARY_TRIGGERS: readonly { section: KbSectionId; pattern: RegExp }[] =
   { section: 'productionStages', pattern: /\btypesetting\b|\bcover design\b|\bproofread|\bproduction\b/i },
 ];
 
-/** Cap so a long, rambling ticket cannot pull the whole KB into one prompt. */
 const MAX_SECONDARY_SECTIONS = 1;
 
-/**
- * Picks the KB sections for a draft: the category's primary section plus at most
- * one secondary section that the ticket text clearly mentions. Company overview
- * and tone guidelines are always in the (static) system prompt, not here.
- */
 export function selectKbSections(category: TicketCategory, text: string): KbSection[] {
   const primary = SECTIONS_BY_CATEGORY[category];
   const secondary = SECONDARY_TRIGGERS.filter((t) => !primary.includes(t.section) && t.pattern.test(text))

@@ -49,7 +49,6 @@ beforeAll(async () => {
 
 beforeEach(async () => {
   ids = await resetData();
-  // Default: the AI provider is down for every call.
   provider.onJson = new FakeProvider().onJson;
   provider.onText = new FakeProvider().onText;
   provider.jsonCalls = 0;
@@ -106,7 +105,7 @@ describe('POST /tickets', () => {
     });
 
     await idle();
-    expect(provider.jsonCalls).toBeGreaterThan(0); // the model was tried (and retried)
+    expect(provider.jsonCalls).toBeGreaterThan(0);
 
     const admin = await request(ctx.app).get(`/api/v1/tickets/${res.body.data.id}`).set(bearer(adminToken));
     expect(admin.body.data).toMatchObject({
@@ -290,7 +289,6 @@ describe('admin workflow', () => {
   it('sets override flags on PATCH, keeps overrides when classification lands later, and null resets to AI', async () => {
     provider.onJson = () => classificationResult({ category: 'Royalty & Payments', priority: 'High' });
     const ticket = await createTicket();
-    // Override before the background classification has run.
     const patched = await request(ctx.app)
       .patch(`/api/v1/tickets/${ticket.id}`)
       .set(bearer(adminToken))
@@ -310,7 +308,7 @@ describe('admin workflow', () => {
       aiStatus: 'done',
       aiCategory: 'Royalty & Payments',
       aiPriority: 'High',
-      category: 'Printing & Quality', // admin override survives
+      category: 'Printing & Quality',
       priority: 'Low',
     });
 
@@ -532,7 +530,6 @@ describe('POST /tickets/:id/ai-draft', () => {
     const res = await request(ctx.app).post(url).set(bearer(adminToken)).send({});
     expect(res.status).toBe(200);
     expect(res.body.data).toMatchObject({ model: 'template', fallback: true });
-    // The template leaves [confirm: ...] placeholders for facts it cannot know, and flags them.
     expect(res.body.data.text).toContain('[confirm:');
     expect(res.body.data.warnings.length).toBeGreaterThan(0);
     expect(res.body.data.text).toContain('BookLeaf Author Support');

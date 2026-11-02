@@ -1,7 +1,6 @@
 import { rateLimit, type Options } from 'express-rate-limit';
 import { currentUser } from './auth.js';
 
-/** Per-user limiter with the contract's RATE_LIMITED error shape. Must run after `authenticate`. */
 function userRateLimiter(
   options: { max: number; windowMs: number },
   message: string,
@@ -20,7 +19,6 @@ function userRateLimiter(
   });
 }
 
-/** Flood protection for POST /tickets/:ticketId/replies. */
 export function replyRateLimiter(options: { max: number; windowMs: number }) {
   return userRateLimiter(
     options,
@@ -28,10 +26,6 @@ export function replyRateLimiter(options: { max: number; windowMs: number }) {
   );
 }
 
-/**
- * Caps POST /tickets, where every new ticket also starts a paid AI classification.
- * Only tickets actually created count, so fixing a rejected form costs the author nothing.
- */
 export function ticketRateLimiter(options: { max: number; windowMs: number }) {
   const minutes = Math.round(options.windowMs / 60_000);
   return userRateLimiter(

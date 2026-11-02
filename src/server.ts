@@ -21,7 +21,6 @@ async function main(): Promise<void> {
   const backfilled = await container.ticketRepository.backfillAuthorUpdatedAt();
   if (backfilled > 0) logger.info({ backfilled }, 'Backfilled authorUpdatedAt on existing tickets');
 
-  // Crash recovery: anything still "pending" never got classified.
   const requeued = await container.classificationQueue.requeue(() =>
     container.ticketRepository.findPendingClassificationIds(),
   );

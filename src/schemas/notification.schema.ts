@@ -4,7 +4,6 @@ import { objectIdParam, paginationQuery } from './common.js';
 export const listNotificationsQuery = paginationQuery;
 
 export const markNotificationsReadBody = z.object({
-  /** Limits the update to one ticket; without it, everything is marked read. */
   ticketId: objectIdParam.optional(),
 });
 

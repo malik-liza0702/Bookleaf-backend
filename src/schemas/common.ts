@@ -1,9 +1,5 @@
 import { z } from 'zod';
 
-/**
- * Small builders so validation messages are human readable ("Required",
- * "Must be at least 3 characters") rather than Zod's internal wording.
- */
 export function text(options: { min?: number; max: number }) {
   const min = options.min ?? 1;
   return z
@@ -17,7 +13,6 @@ export function oneOf<const T extends readonly [string, ...string[]]>(values: T)
   return z.enum(values, { error: () => `Must be one of: ${values.join(', ')}` });
 }
 
-/** Accepts YYYY-MM-DD or a full ISO-8601 timestamp. */
 export const isoDateParam = z
   .string()
   .refine((value) => !Number.isNaN(Date.parse(value)), 'Must be an ISO-8601 date or timestamp');
@@ -32,5 +27,4 @@ export const paginationQuery = z.object({
     .default(20),
 });
 
-/** A MongoDB ObjectId as a 24-character hex string. */
 export const objectIdParam = z.string().regex(/^[a-f0-9]{24}$/i, 'Must be a valid id');

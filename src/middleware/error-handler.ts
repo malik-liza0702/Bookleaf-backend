@@ -4,7 +4,6 @@ import { ZodError } from 'zod';
 import { AppError, Errors, type ErrorDetail } from '../lib/errors.js';
 import type { Logger } from '../lib/logger.js';
 
-/** Unknown routes get the contract's NOT_FOUND shape instead of Express's HTML page. */
 export const notFoundHandler: RequestHandler = (req) => {
   throw new AppError('NOT_FOUND', `Route ${req.method} ${req.path} not found`);
 };
@@ -17,7 +16,6 @@ function fromZod(error: ZodError): AppError {
   return Errors.validation('Request validation failed', details);
 }
 
-/** Mongoose / MongoDB errors that reflect bad input rather than a server fault. */
 function fromMongo(error: unknown): AppError | null {
   if (error instanceof mongoose.Error.ValidationError) {
     const details: ErrorDetail[] = Object.values(error.errors).map((issue) => ({
@@ -27,7 +25,6 @@ function fromMongo(error: unknown): AppError | null {
     return Errors.validation('Request validation failed', details);
   }
   if (error instanceof mongoose.Error.CastError) {
-    // Safety net: ids are checked before querying, so this should not happen.
     return Errors.validation('Request validation failed', [
       { field: error.path, message: 'Has an invalid format' },
     ]);
@@ -39,7 +36,6 @@ function fromMongo(error: unknown): AppError | null {
   return null;
 }
 
-/** Body-parser errors carry an HTTP status and a `type`. */
 function fromBodyParser(error: unknown): AppError | null {
   if (typeof error !== 'object' || error === null || !('type' in error)) return null;
   switch ((error as { type: unknown }).type) {
@@ -52,12 +48,6 @@ function fromBodyParser(error: unknown): AppError | null {
   }
 }
 
-/**
- * Last stop for every error. Always responds with
- * `{ error: { code, message, details? } }`. Unexpected errors are logged with
- * their stack and returned as a generic INTERNAL_ERROR; stack traces never
- * reach the client, and production hides the original message too.
- */
 export function errorHandler(logger: Logger, isProduction: boolean): ErrorRequestHandler {
   return (err: unknown, req, res, _next) => {
     let appError: AppError | null;
@@ -71,7 +61,6 @@ export function errorHandler(logger: Logger, isProduction: boolean): ErrorReques
         !isProduction && err instanceof Error ? err.message : 'Something went wrong. Please try again.';
       appError = new AppError('INTERNAL_ERROR', message);
     } else if (appError.status >= 500 && appError.code !== 'AI_UNAVAILABLE') {
-      // AI_UNAVAILABLE is an expected, already-logged degraded path, not a server fault.
       logger.error({ err, method: req.method, url: req.originalUrl }, appError.message);
     }
 

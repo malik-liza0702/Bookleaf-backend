@@ -4,7 +4,6 @@ import { describe, expect, it } from 'vitest';
 import { KB_SAMPLES, KB_SECTIONS, selectKbSections } from '../../src/ai/knowledgeBase.js';
 
 const source = readFileSync(fileURLToPath(new URL('../../data/knowledge_base_source.md', import.meta.url)), 'utf8');
-// The source file and the PDF mix straight and curly apostrophes; compare without caring.
 const normalize = (s: string) => s.replace(/[‘’]/g, "'").replace(/\s+/g, ' ');
 
 describe('knowledge base', () => {

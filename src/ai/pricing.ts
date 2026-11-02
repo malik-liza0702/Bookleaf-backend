@@ -1,13 +1,5 @@
 import type { AiUsage } from './types.js';
 
-/**
- * Gemini API paid-tier Standard prices in USD per 1M tokens, copied from
- * https://ai.google.dev/gemini-api/docs/pricing ("Last updated 2026-10-22").
- * 3.6/3.8 Flash have a promotional rate until 2026-12-31 and double from
- * 2027-01-01, so prices are kept as dated periods.
- * The core may override these from env (e.g. AI_PRICE_INPUT_PER_MTOK).
- */
-
 export interface ModelPrice {
   inputPerMTok: number;
   outputPerMTok: number;
@@ -15,7 +7,6 @@ export interface ModelPrice {
 }
 
 interface PricePeriod extends ModelPrice {
-  /** First day (UTC, inclusive) this price applies. */
   from: string;
 }
 
@@ -42,11 +33,6 @@ export function priceFor(model: string, at: Date = new Date()): ModelPrice | nul
   return [...periods].reverse().find((p) => p.from <= day) ?? null;
 }
 
-/**
- * Estimated USD cost of one call. Cached prompt tokens are billed at the cache
- * rate, the rest of the prompt at the input rate, output (incl. thinking) at the
- * output rate. Returns null for a model without a known price.
- */
 export function estimateCostUsd(usage: Pick<AiUsage, 'model' | 'inputTokens' | 'outputTokens' | 'cacheReadTokens'>, override?: ModelPrice, at?: Date): number | null {
   const price = override ?? priceFor(usage.model, at);
   if (!price) return null;

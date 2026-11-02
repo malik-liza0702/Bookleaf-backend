@@ -28,7 +28,7 @@ Every endpoint in the BookLeaf Author Support Portal backend: what it is for, wh
 
 | Method and path | Access | Role of the endpoint | Called from (frontend) |
 | --- | --- | --- | --- |
-| `GET /health` | Public | Reports whether the API and database are up | Not called; used by the Docker healthcheck |
+| `GET /health` | Public | Reports whether the API and database are up | Not called |
 | `POST /auth/login` | Public | Exchanges email and password for a JWT | `LoginPage` |
 | `GET /auth/me` | Any | Restores the session from a stored token | `AuthProvider` |
 | `GET /books` | Any | Lists books: an author's own, or all for an admin | `MyBooksPage`, `AuthorDashboardPage`, `RequesterContext` |
@@ -167,7 +167,7 @@ Only origins listed in `CORS_ORIGIN` are allowed, with the methods `GET`, `POST`
 
 ### `GET /health`
 
-Reports whether the API is running and connected to MongoDB. The Docker healthcheck uses it.
+Reports whether the API is running and connected to MongoDB.
 
 **Access:** public.
 

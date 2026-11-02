@@ -1,9 +1,3 @@
-/**
- * Public API of the AI module (see AI_MODULE_CONTRACT.md). The core backend
- * imports only from here. The module is pure: no database, HTTP framework or
- * process.env access; configuration comes in through createAiService().
- */
-
 export {
   AiUnavailableError,
   TICKET_CATEGORIES,

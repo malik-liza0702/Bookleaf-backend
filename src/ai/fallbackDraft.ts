@@ -3,13 +3,6 @@ import { formatInr, ticketFacts, type TicketFacts } from './facts.js';
 import { firstName, SIGN_OFF } from './prompts/draft.js';
 import type { DraftInput, TicketCategory } from './types.js';
 
-/**
- * Template starter reply used when the model is unavailable, so an admin is
- * never left with a blank box. Filled from the same computed facts as the AI
- * draft; everything it cannot know is a [confirm: …] placeholder. Optional for
- * the core: it may offer this as `aiDraft.fallback: true` alongside the 503.
- */
-
 function longDate(iso: string): string {
   return new Date(`${iso}T00:00:00Z`).toLocaleDateString('en-GB', { day: 'numeric', month: 'long', year: 'numeric', timeZone: 'UTC' });
 }
@@ -39,7 +32,6 @@ function bodyFor(category: TicketCategory, facts: TicketFacts): string[] {
         `Royalties are calculated quarterly and paid within 45 days of each quarter ending; the next scheduled payout is by ${longDate(r.nextScheduledPayoutBy)}.`,
       ];
       if (r.status === 'possibly_overdue') {
-        // Ownership stays conditional: the record cannot show which quarter the pending amount is from.
         lines.push(
           `If any of the pending amount was due in an earlier cycle, that is on us and we will put it right. I have asked our finance team to confirm the breakdown within 48 hours. [confirm: finance breakdown of the pending amount by quarter]`,
         );
@@ -81,7 +73,6 @@ function bodyFor(category: TicketCategory, facts: TicketFacts): string[] {
 
 export interface FallbackDraft {
   text: string;
-  /** Same review checks as AI drafts (placeholders to fill, unknown amounts/dates). */
   warnings: string[];
 }
 

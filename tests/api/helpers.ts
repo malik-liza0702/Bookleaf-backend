@@ -14,7 +14,6 @@ import { UserModel } from '../../src/models/user.model.js';
 
 export const PASSWORD = 'Secret@123';
 
-/** Fake LLM provider: returns scripted results or throws, and records every call. */
 export class FakeProvider implements AiProvider {
   readonly name = 'fake';
   jsonCalls = 0;
@@ -69,7 +68,6 @@ export interface TestContext {
   ids: { admin: string; ops: string };
 }
 
-/** Real AI service (retries, breaker, rules fallback) around a fake provider; no sleeping between retries. */
 export function aiServiceWith(provider: AiProvider): AiService {
   return createAiService(
     { classifyModel: 'gemini-3.5-flash-lite', draftModel: 'gemini-3.8-flash', maxRetries: 1, timeoutMs: 2000 },
@@ -77,7 +75,6 @@ export function aiServiceWith(provider: AiProvider): AiService {
   );
 }
 
-/** Connects this test file to its own database on the shared in-memory server. */
 export async function connectTestDb(): Promise<void> {
   const uri = inject('mongoUri');
   const dbName = `test_${Math.random().toString(36).slice(2, 10)}`;
@@ -90,7 +87,6 @@ export async function disconnectTestDb(): Promise<void> {
   await mongoose.disconnect();
 }
 
-/** Fresh fixtures for every test: 2 admins, 2 authors, 3 books (one in production). */
 export async function resetData(): Promise<TestContext['ids']> {
   await Promise.all(Object.values(mongoose.connection.collections).map((c) => c.deleteMany({})));
   const hash = await bcrypt.hash(PASSWORD, 4);

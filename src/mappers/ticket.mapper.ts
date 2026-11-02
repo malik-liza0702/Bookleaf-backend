@@ -10,13 +10,6 @@ import {
 import type { Attachment, ResponseSubdoc } from '../models/ticket.model.js';
 import type { AdminTicketRecord, AuthorTicketRecord } from '../repositories/ticket.repository.js';
 
-/**
- * Two deliberately separate serializers. The author view is built field by
- * field from an allow-list, so a new internal field on the ticket can never
- * leak to authors by accident. It never contains notes, AI fields, drafts or
- * the assignee, and every support reply is signed "BookLeaf Support".
- */
-
 const SUPPORT_DISPLAY_NAME = 'BookLeaf Support';
 
 export interface AuthorResponseDto {
@@ -109,7 +102,6 @@ function responseFields(response: ResponseSubdoc, supportName: string): AuthorRe
 export function toAuthorTicketDto(ticket: AuthorTicketRecord): AuthorTicketDto {
   return {
     ...baseFields(ticket),
-    // Authors only get the time of the last change they can see, never admin activity.
     updatedAt: ticket.authorUpdatedAt.toISOString(),
     responses: (ticket.responses ?? []).map((response) => responseFields(response, SUPPORT_DISPLAY_NAME)),
   };

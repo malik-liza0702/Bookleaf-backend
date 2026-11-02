@@ -4,14 +4,8 @@ import { ModelCallError, type ModelCaller } from './modelCaller.js';
 import { buildDraftPrompt, DRAFT_SYSTEM_PROMPT } from './prompts/draft.js';
 import { AiUnavailableError, type DraftInput, type DraftResult } from './types.js';
 
-/**
- * Covers LOW thinking plus a ~220-word reply (~350 tokens). Real drafts averaged
- * ~1,330 output tokens, and 1,536 truncated some of them, so this leaves headroom.
- */
 export const DRAFT_MAX_OUTPUT_TOKENS = 3072;
-/** A revision may have to return a hand-edited draft of up to 5,000 characters (~1,700 tokens). */
 export const REVISION_MAX_OUTPUT_TOKENS = 3072;
-/** Shorter than this is not a usable reply (e.g. a refusal or a fragment). */
 const MIN_DRAFT_CHARS = 80;
 
 export const DRAFT_UNAVAILABLE_MESSAGE = 'AI draft unavailable. You can write a response manually.';

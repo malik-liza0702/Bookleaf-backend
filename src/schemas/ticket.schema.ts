@@ -10,7 +10,6 @@ export const createTicketBody = z.object({
   bookId: z.string().trim().min(1).max(32).nullish().transform((value) => value ?? null),
   subject: text({ min: 3, max: 150 }),
   description: text({ min: 10, max: 5000 }),
-  // Metadata only: file storage is out of scope for this version.
   attachments: z
     .array(
       z.object({
@@ -43,7 +42,6 @@ export const listTicketsQuery = paginationQuery.extend({
 export const updateTicketBody = z
   .object({
     status: oneOf(TICKET_STATUSES).optional(),
-    // null = "reset to AI": drop the override and use the AI/rules value again.
     category: oneOf(TICKET_CATEGORIES).nullable().optional(),
     priority: oneOf(TICKET_PRIORITIES).nullable().optional(),
     assignedTo: z.union([z.literal('me'), objectIdParam]).nullable().optional(),

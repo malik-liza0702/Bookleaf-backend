@@ -1,16 +1,9 @@
 import { ProviderError } from './provider.js';
 
 export interface RetryOptions {
-  /** Retries after the first attempt. */
   maxRetries: number;
-  /** Per-attempt timeout; the attempt's AbortSignal fires when it elapses. */
   timeoutMs: number;
   baseDelayMs?: number;
-  /**
-   * Longest we are willing to wait between attempts. If the server asks for a
-   * longer pause (retry-after), we give up immediately rather than hold an admin's
-   * request open: the caller degrades instead.
-   */
   maxDelayMs?: number;
   sleep?: (ms: number) => Promise<void>;
   random?: () => number;
@@ -18,11 +11,6 @@ export interface RetryOptions {
 
 const defaultSleep = (ms: number) => new Promise<void>((resolve) => setTimeout(resolve, ms));
 
-/**
- * Runs `fn` with a per-attempt timeout and bounded exponential backoff (full
- * jitter) on retryable ProviderErrors: 429, 5xx and timeouts. Anything else
- * (safety block, bad request, invalid output) fails straight away.
- */
 export async function withRetry<T>(fn: (signal: AbortSignal) => Promise<T>, opts: RetryOptions): Promise<T> {
   const sleep = opts.sleep ?? defaultSleep;
   const random = opts.random ?? Math.random;

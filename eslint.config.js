@@ -14,7 +14,6 @@ export default tseslint.config(
     },
   },
   {
-    // CLI scripts and tests may print.
     files: ['src/seed/**', 'tests/**'],
     rules: { 'no-console': 'off' },
   },

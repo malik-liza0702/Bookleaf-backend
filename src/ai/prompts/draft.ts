@@ -3,17 +3,6 @@ import { KB_SECTIONS, renderSection, samplesFor, selectKbSections } from '../kno
 import type { DraftInput, DraftRevision, ThreadMessage } from '../types.js';
 import { sanitizeAttribute, sanitizeUntrusted } from '../untrusted.js';
 
-/**
- * Draft prompt.
- *
- * The system instruction is identical for every draft (role, company overview,
- * tone rules, hard rules, format), so it is a stable prefix that implicit
- * prefix caching can reuse. Everything ticket-specific goes in the user turn:
- * only the policy section(s) for this category, that category's sample
- * guidance, code-computed facts, the last few thread messages and the ticket,
- * plus the previous draft and the admin's suggestions when revising.
- */
-
 export const SIGN_OFF = 'Warm regards,\nBookLeaf Author Support';
 
 export const DRAFT_SYSTEM_PROMPT = `You are a senior member of the BookLeaf Publishing Author Support team, drafting a reply to an author's support ticket. A support admin reviews and edits your draft before it is sent, so write it exactly as it should reach the author.
@@ -40,7 +29,6 @@ ${renderSection(KB_SECTIONS.toneGuidelines)}
 - End with exactly these two lines:
 ${SIGN_OFF}`;
 
-/** Prior messages beyond this are dropped: the latest exchange carries the context that matters. */
 export const MAX_THREAD_MESSAGES = 3;
 const MAX_THREAD_MESSAGE_CHARS = 1200;
 const MAX_DESCRIPTION_CHARS = 5000;

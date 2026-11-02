@@ -8,13 +8,12 @@ import { loadOpenApiSpec } from './docs/openapi.js';
 import { errorHandler, notFoundHandler } from './middleware/error-handler.js';
 import { createApiRouter } from './routes/index.js';
 
-/** Builds the Express app. No network or DB side effects, so tests can use it directly. */
 export function createApp(container: Container): Express {
   const { config, logger } = container;
   const app = express();
 
   app.disable('x-powered-by');
-  app.set('trust proxy', 1); // behind Render/Railway's proxy: trust its X-Forwarded-* headers
+  app.set('trust proxy', 1);
 
   app.use(helmet());
   app.use(

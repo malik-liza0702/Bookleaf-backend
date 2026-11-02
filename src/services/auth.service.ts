@@ -8,7 +8,6 @@ const INVALID_CREDENTIALS = 'Invalid email or password';
 const ADMIN_EMAIL_DOMAIN = '@bookleaf.com';
 
 export class AuthService {
-  /** Compared against when the email is unknown, so both failure paths take the same time. */
   private readonly dummyHash = bcrypt.hashSync('timing-equaliser', 10);
 
   constructor(
@@ -20,10 +19,8 @@ export class AuthService {
     const user = await this.users.findByEmail(email);
     const passwordOk = await bcrypt.compare(password, user?.passwordHash ?? this.dummyHash);
     if (!user || !passwordOk) {
-      // Same message for unknown email and wrong password: no account enumeration.
       throw Errors.unauthenticated(INVALID_CREDENTIALS);
     }
-    // Checked only after the password, so it reveals nothing to someone without credentials.
     if (user.role === 'admin' && !user.email.toLowerCase().endsWith(ADMIN_EMAIL_DOMAIN)) {
       throw Errors.forbidden(`Admin accounts must use a ${ADMIN_EMAIL_DOMAIN} email address`);
     }

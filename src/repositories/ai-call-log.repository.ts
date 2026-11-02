@@ -31,7 +31,6 @@ export class AiCallLogRepository {
     await AiCallLogModel.create(entry);
   }
 
-  /** Per kind and model since `since`: calls, failures, token totals, average latency. */
   summarize(since: Date): Promise<AiUsageRow[]> {
     return AiCallLogModel.aggregate<AiUsageRow>([
       { $match: { createdAt: { $gte: since } } },

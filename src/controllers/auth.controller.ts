@@ -3,7 +3,6 @@ import { currentUser } from '../middleware/auth.js';
 import type { LoginBody } from '../schemas/auth.schema.js';
 import type { AuthService } from '../services/auth.service.js';
 
-/** Controllers translate HTTP <-> service calls. Bodies were already validated by middleware. */
 export function createAuthController(auth: AuthService) {
   return {
     login: async (req: Request, res: Response) => {

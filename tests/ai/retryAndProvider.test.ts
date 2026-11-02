@@ -57,7 +57,6 @@ describe('GeminiProvider', () => {
       if (response instanceof Error) throw response;
       return response;
     });
-    // Replace the SDK call; everything else (config building, mapping) is the real code.
     (p as unknown as { client: { models: { generateContent: typeof spy } } }).client.models.generateContent = spy;
     return { p, spy };
   }
@@ -105,7 +104,7 @@ describe('GeminiProvider', () => {
 
   it('picks the right thinking knob per model generation', () => {
     expect(thinkingConfigFor('gemini-3.5-flash-lite', 'minimal')).toEqual({ thinkingLevel: ThinkingLevel.MINIMAL });
-    expect(thinkingConfigFor('gemini-3.8-flash', 'minimal')).toEqual({ thinkingLevel: ThinkingLevel.LOW }); // 3.8 Flash rejects MINIMAL
+    expect(thinkingConfigFor('gemini-3.8-flash', 'minimal')).toEqual({ thinkingLevel: ThinkingLevel.LOW });
     expect(thinkingConfigFor('gemini-3.8-flash', 'low')).toEqual({ thinkingLevel: ThinkingLevel.LOW });
     expect(thinkingConfigFor('gemini-2.5-flash', 'minimal')).toEqual({ thinkingBudget: 0 });
   });
@@ -119,9 +118,7 @@ describe('GeminiProvider', () => {
 describe('estimateCostUsd', () => {
   it('prices input, cached input and output separately, using the dated price', () => {
     const usage = { model: 'gemini-3.8-flash', inputTokens: 1_000_000, outputTokens: 1_000_000, cacheReadTokens: 500_000 };
-    // 0.5M × $0.75 + 0.5M × $0.075 + 1M × $3.75
     expect(estimateCostUsd(usage, undefined, new Date('2026-10-26'))).toBeCloseTo(4.1625, 6);
-    // Same tokens after the promotional period ends
     expect(estimateCostUsd(usage, undefined, new Date('2027-01-01'))).toBeCloseTo(8.325, 6);
     expect(estimateCostUsd({ ...usage, model: 'unknown-model' })).toBeNull();
   });

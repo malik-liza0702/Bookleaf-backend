@@ -44,9 +44,9 @@ describe('generateDraft context building', () => {
     const { system, prompt, thinking, maxOutputTokens } = provider.calls[0]!;
 
     expect(system).toBe(DRAFT_SYSTEM_PROMPT);
-    expect(prompt).toContain('80/20 royalty split'); // royalty policy
-    expect(prompt).not.toContain('Standard print turnaround'); // printing policy left out
-    expect(prompt).not.toContain('stock sync issue'); // distribution policy left out
+    expect(prompt).toContain('80/20 royalty split');
+    expect(prompt).not.toContain('Standard print turnaround');
+    expect(prompt).not.toContain('stock sync issue');
     expect(prompt).toContain('"status":"possibly_overdue"');
     expect(prompt).toContain('"nextScheduledPayoutBy":"2026-11-14"');
     expect(system).toContain('never say a payment is late');
@@ -226,7 +226,7 @@ describe('buildFallbackDraft', () => {
     expect(text).toContain('within 48 hours');
     expect(text).not.toMatch(/should have reached|is overdue|is late/);
     expect(warnings.join(' ')).toContain('placeholder');
-    expect(warnings.join(' ')).not.toMatch(/Check (amount|date)/); // every figure comes from the record
+    expect(warnings.join(' ')).not.toMatch(/Check (amount|date)/);
   });
 
   it('recently earned pending amount: says when it is due, claims nothing', () => {

@@ -257,7 +257,7 @@ Both models have a free tier, which covers development but not a demo: on 2026-1
 ## Deployment
 
 - **Database:** MongoDB Atlas free tier (M0). Put the `mongodb+srv://…` string in `MONGODB_URI`, and allow the host's egress IPs, or 0.0.0.0/0 for a demo.
-- **API:** Render or Railway, either from the `Dockerfile` (multi-stage, `node:22-alpine`, runs as a non-root user, with a healthcheck on `/api/v1/health`) or as a plain Node service with `npm ci && npm run build` and `npm start`. Set `NODE_ENV=production`, `JWT_SECRET`, `MONGODB_URI` and `CORS_ORIGIN` (the frontend URL), plus `GEMINI_API_KEY` (with billing enabled for a demo; see [Model choice](#model-choice)). The platform's `PORT` is respected.
+- **API:** Render or Railway, as a plain Node service with `npm ci && npm run build` and `npm start`. Set `NODE_ENV=production`, `JWT_SECRET`, `MONGODB_URI` and `CORS_ORIGIN` (the frontend URL), plus `GEMINI_API_KEY` (with billing enabled for a demo; see [Model choice](#model-choice)). The platform's `PORT` is respected.
 - **Frontend:** see [its deployment notes](../frontend/README.md#deployment). Set `VITE_API_BASE_URL` at build time, and add the frontend's URL to `CORS_ORIGIN`.
 - **Secrets:** `.env` is git-ignored and `.env.example` is committed, so real values only ever go in `.env` or the host's settings.
 - **Seed once:** `npm run db:seed:prod` (it's idempotent).

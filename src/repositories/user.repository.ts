@@ -3,7 +3,6 @@ import { escapeRegex } from '../lib/regex.js';
 import { AuthorModel, type AuthorDoc } from '../models/author.model.js';
 import { UserModel, type UserDoc } from '../models/user.model.js';
 
-/** An author profile with the account fields admins may see. Never carries the password hash. */
 export type AuthorRecord = Pick<AuthorDoc, '_id' | 'authorId' | 'phone' | 'city' | 'joinedDate'> & {
   user: Pick<UserDoc, 'name' | 'email'>;
 };
@@ -46,7 +45,6 @@ export class UserRepository {
     return AuthorModel.findOne({ authorId }).lean();
   }
 
-  /** Alphabetical by name. `search` matches name, email, author id or city, literally. */
   async listAuthors(params: { search?: string; page: number; limit: number }) {
     const regex = params.search ? { $regex: escapeRegex(params.search), $options: 'i' } : null;
     const match: PipelineStage[] = regex

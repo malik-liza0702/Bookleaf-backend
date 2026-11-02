@@ -44,18 +44,11 @@ export class TicketService {
     private readonly notifications: NotificationService,
   ) {}
 
-  // ---------- Author + admin ----------
-
-  /**
-   * Creates the ticket and returns immediately. Classification is queued and
-   * runs afterwards, so an AI outage can never block or fail ticket creation.
-   */
   async create(author: AuthUser, body: CreateTicketBody): Promise<AuthorTicketDto> {
     if (!author.authorId) throw Errors.forbidden('Only authors can create tickets');
 
     if (body.bookId) {
       const book = await this.books.findByBookId(body.bookId);
-      // Unknown and someone else's book get the same answer: existence never leaks.
       if (!book || book.authorId !== author.authorId) {
         throw Errors.validation('Request validation failed', [
           { field: 'bookId', message: 'Select one of your own books' },
@@ -98,7 +91,6 @@ export class TicketService {
     return { data: rows.map(toAdminTicketDto), meta: { ...meta, total } };
   }
 
-  /** Authors only see their own tickets; anything else is a 404. */
   async get(user: AuthUser, ticketId: string): Promise<AuthorTicketDto | AdminTicketDto> {
     if (user.role === 'admin') return this.getAdminView(ticketId);
 
@@ -107,11 +99,6 @@ export class TicketService {
     return toAuthorTicketDto(ticket);
   }
 
-  /**
-   * Lets an author who isn't satisfied keep the conversation going. Resolved and
-   * Closed are final, so they refuse replies. The status doesn't change: the
-   * ticket is flagged with needsReply so it stands out in the admin queue.
-   */
   async reply(author: AuthUser, ticketId: string, body: CreateReplyBody): Promise<AuthorTicketDto> {
     const ticket = await this.tickets.findCore(ticketId);
     if (!ticket || ticket.authorId !== author.authorId) throw Errors.notFound('Ticket');
@@ -127,8 +114,6 @@ export class TicketService {
     return toAuthorTicketDto(updated!);
   }
 
-  // ---------- Admin only ----------
-
   async update(admin: AuthUser, ticketId: string, body: UpdateTicketBody): Promise<AdminTicketDto> {
     const ticket = await this.requireTicket(ticketId);
     const set: Partial<TicketDoc> = {};
@@ -139,7 +124,6 @@ export class TicketService {
     }
 
     if (body.category === null) {
-      // Reset to AI: fall back to the stored AI/rules value (placeholder if still pending).
       Object.assign(set, { category: ticket.aiCategory ?? PENDING_CATEGORY, categoryOverridden: false });
     } else if (body.category) {
       Object.assign(set, { category: body.category, categoryOverridden: true });
@@ -165,10 +149,6 @@ export class TicketService {
     return this.getAdminView(ticketId);
   }
 
-  /**
-   * Adds a reply the author will see. Status changes in the same atomic write:
-   * the explicit `status` if given, otherwise Open moves to In Progress.
-   */
   async respond(admin: AuthUser, ticketId: string, body: CreateResponseBody): Promise<AdminTicketDto> {
     const ticket = await this.requireTicket(ticketId);
     const nextStatus: TicketStatus = body.status ?? (ticket.status === 'Open' ? 'In Progress' : ticket.status);
@@ -183,7 +163,6 @@ export class TicketService {
       },
       { status: nextStatus, currentResolvedAt: ticket.resolvedAt },
     );
-    // One notification per reply, even when the reply also changes the status.
     await this.notifications.notifyAuthor(ticket, {
       type: 'reply',
       status: nextStatus === ticket.status ? null : nextStatus,
@@ -200,8 +179,6 @@ export class TicketService {
     });
     return this.getAdminView(ticketId);
   }
-
-  // ---------- helpers ----------
 
   private async getAdminView(ticketId: string): Promise<AdminTicketDto> {
     const ticket = await this.tickets.findForAdminView(ticketId);
@@ -247,7 +224,6 @@ export class TicketService {
 
     if (query.from) filters.createdFrom = new Date(query.from);
     if (query.to) {
-      // A bare date means "through the end of that day".
       const to = new Date(query.to);
       filters.createdBefore = DATE_ONLY.test(query.to) ? new Date(to.getTime() + ONE_DAY_MS) : to;
     }

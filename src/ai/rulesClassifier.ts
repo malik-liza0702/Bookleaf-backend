@@ -2,15 +2,8 @@ import { ticketFacts } from './facts.js';
 import { applyPriorityFloors, atLeast, ISBN_ERROR } from './priorityRules.js';
 import type { ClassificationResult, ClassifyInput, TicketCategory, TicketPriority } from './types.js';
 
-/**
- * Keyword classifier used when the AI path is unavailable (no key, outage,
- * circuit open, invalid output). It is deliberately simple and explainable: it
- * only has to put the ticket in a sensible queue position until a human looks.
- */
-
 interface CategoryRule {
   category: Exclude<TicketCategory, 'General Inquiry'>;
-  /** [label shown to admins, pattern] */
   patterns: readonly (readonly [string, RegExp])[];
 }
 
@@ -98,7 +91,6 @@ export function classifyByRules(input: ClassifyInput): ClassificationResult {
   const text = `${input.subject}\n${input.description}`;
   const facts = ticketFacts(input.book, input.now ?? new Date());
 
-  // Subject matches count double: authors usually put the actual problem there.
   const scored = CATEGORY_RULES.map((rule) => {
     const matched = rule.patterns.filter(([, p]) => p.test(text)).map(([label]) => label);
     const subjectHits = rule.patterns.filter(([, p]) => p.test(input.subject)).length;
@@ -107,9 +99,7 @@ export function classifyByRules(input: ClassifyInput): ClassificationResult {
 
   const best = scored[0];
   let category: TicketCategory = best && best.score > 0 ? best.rule.category : 'General Inquiry';
-  // An ISBN error wins even when the ticket also names the store it saw it on.
   if (ISBN_ERROR.test(text)) category = 'ISBN & Metadata Issues';
-  // "Unavailable" on a book still in production is a production question, not a distribution fault.
   if (category === 'Distribution & Availability' && input.book?.isInProduction) category = 'Book Status & Production Updates';
 
   let priority = DEFAULT_PRIORITY[category];

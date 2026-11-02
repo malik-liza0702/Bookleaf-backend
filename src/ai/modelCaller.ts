@@ -9,14 +9,12 @@ import {
 import { withRetry, type RetryOptions } from './retry.js';
 import type { AiErrorCode, AiUsage } from './types.js';
 
-/** Codes that say the provider itself is unhealthy; only these trip the circuit breaker. */
 const HEALTH_FAILURES: ReadonlySet<AiErrorCode> = new Set(['RATE_LIMITED', 'UNAVAILABLE', 'TIMEOUT', 'UNKNOWN']);
 
 export class ModelCallError extends Error {
   constructor(
     readonly code: AiErrorCode,
     message: string,
-    /** Tokens were still spent when the model answered but the answer was unusable. */
     readonly usage?: AiUsage,
   ) {
     super(message);
@@ -31,10 +29,6 @@ export interface ModelCallResult {
 
 type Request = Omit<GenerateRequest, 'signal'> & { schema?: GenerateJsonRequest['schema'] };
 
-/**
- * The one path every model call takes: circuit breaker → per-attempt timeout
- * and retries → usage accounting → error normalisation.
- */
 export class ModelCaller {
   constructor(
     private readonly provider: AiProvider,
@@ -59,7 +53,6 @@ export class ModelCaller {
       return { text: result.text, usage: toUsage(req.model, result.usage, this.clock() - started) };
     } catch (err) {
       const error = err instanceof ProviderError ? err : new ProviderError('UNKNOWN', String(err));
-      // A blocked or malformed answer means the provider is up; don't count it against its health.
       if (HEALTH_FAILURES.has(error.code)) this.breaker.recordFailure();
       else this.breaker.recordSuccess();
       const usage = error.options.usage ? toUsage(req.model, error.options.usage, this.clock() - started) : undefined;
@@ -72,7 +65,6 @@ function toUsage(model: string, usage: ProviderUsage, latencyMs: number): AiUsag
   return { model, ...usage, latencyMs };
 }
 
-/** Sums usage across attempts of one logical task (e.g. a retry after invalid JSON). */
 export function addUsage(a: AiUsage | undefined, b: AiUsage | undefined): AiUsage | undefined {
   if (!a) return b;
   if (!b) return a;

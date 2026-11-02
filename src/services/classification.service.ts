@@ -4,15 +4,6 @@ import { toBookContext } from '../mappers/ai-context.mapper.js';
 import type { TicketRepository } from '../repositories/ticket.repository.js';
 import type { AiCallRecorder } from './ai-call-recorder.js';
 
-/**
- * Classifies one ticket and stores the result. Runs in the background (see
- * jobs/classification-queue.ts), never inside the request that created the
- * ticket.
- *
- * The AI module already falls back to its rule-based classifier when the model
- * fails; this service adds one more safety net in case the module itself
- * throws, so a ticket can never stay "pending" because of an AI problem.
- */
 export class ClassificationService {
   constructor(
     private readonly ai: AiService,
@@ -71,7 +62,6 @@ export class ClassificationService {
     }
   }
 
-  /** Makes it obvious to admins that rules, not the model, produced this. */
   private rulesReasoning(result: ClassificationResult): string {
     if (/rule/i.test(result.reasoning)) return result.reasoning;
     const why = result.error?.code === 'NO_API_KEY' ? 'AI not configured' : 'AI unavailable';

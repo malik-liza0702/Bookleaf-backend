@@ -17,7 +17,6 @@ import {
   type TicketDoc,
 } from '../models/ticket.model.js';
 
-/** Fields an author may ever see. AI fields, notes, drafts and assignee are never loaded. */
 const AUTHOR_VIEW_FIELDS =
   'number authorId bookId queryType subject description attachments status responses resolvedAt createdAt authorUpdatedAt';
 
@@ -44,7 +43,6 @@ export type AdminTicketRecord = Omit<TicketDoc, 'authorUser' | 'assignedTo'> & {
   book?: { title: string } | null;
 };
 
-/** What the AI draft needs: no internal notes, only the last few responses. */
 export type DraftContextRecord = Omit<TicketDoc, 'authorUser' | 'internalNotes'> & {
   authorUser: { _id: Types.ObjectId; name: string } | null;
   book?: BookDoc | null;
@@ -59,7 +57,6 @@ export interface TicketFilters {
   status?: TicketStatus;
   category?: TicketCategory;
   priority?: TicketPriority;
-  /** A user id, or null for "unassigned". */
   assignedTo?: string | null;
   createdFrom?: Date;
   createdBefore?: Date;
@@ -72,8 +69,6 @@ export interface TicketFilters {
 export type TicketSort = 'urgency' | 'newest' | 'oldest';
 
 const SORTS: Record<TicketSort, Record<string, SortOrder>> = {
-  // Unresolved first, then Critical > High > Medium > Low, then oldest first
-  // so long-waiting tickets surface. Served by the matching compound index.
   urgency: { statusRank: 1, priorityRank: 1, createdAt: 1, _id: 1 },
   newest: { createdAt: -1, _id: -1 },
   oldest: { createdAt: 1, _id: 1 },
@@ -83,17 +78,14 @@ const AUTHOR_SORT: Record<string, SortOrder> = { authorUpdatedAt: -1, _id: -1 };
 
 const DRAFT_THREAD_LIMIT = 6;
 
-/** Keeps the embedded thread bounded: past this an author is asked to raise a new ticket. */
 const MAX_THREAD_MESSAGES = 50;
 
-/** Status-dependent fields that must always change together. */
 export function statusFields(status: TicketStatus, currentResolvedAt: Date | null) {
   const rank = statusRank(status);
   return {
     status,
     statusRank: rank,
     resolvedAt: rank === 0 ? null : (currentResolvedAt ?? new Date()),
-    // A finished ticket is not waiting for anyone.
     ...(rank === 0 ? {} : { needsReply: false }),
   };
 }
@@ -102,12 +94,6 @@ export function priorityFields(priority: TicketPriority) {
   return { priority, priorityRank: priorityRank(priority) };
 }
 
-/**
- * All ticket reads and writes go through here, so the derived sort keys
- * (statusRank, priorityRank) and updatedAt can never drift from the data.
- * Malformed ids resolve to null (the service turns that into 404) instead of
- * surfacing a Mongoose CastError.
- */
 export class TicketRepository {
   private buildQuery(filters: TicketFilters): QueryFilter<TicketDoc> {
     const query: QueryFilter<TicketDoc> = {};
@@ -126,8 +112,6 @@ export class TicketRepository {
     if (filters.updatedSince) query.updatedAt = { $gt: filters.updatedSince };
     if (filters.authorUpdatedSince) query.authorUpdatedAt = { $gt: filters.authorUpdatedSince };
     if (filters.search) {
-      // "TKT-0007" or "7" jumps to a ticket number; anything else searches the
-      // subject. User input is escaped so it is matched literally.
       const numberMatch = /^(?:tkt-?)?0*(\d+)$/i.exec(filters.search);
       const subjectMatch = { subject: { $regex: escapeRegex(filters.search), $options: 'i' } };
       query.$or = numberMatch ? [subjectMatch, { number: Number(numberMatch[1]) }] : [subjectMatch];
@@ -226,18 +210,11 @@ export class TicketRepository {
     return ticket._id.toString();
   }
 
-  /** Applies a $set (and optional $unset). timestamps: true bumps updatedAt. */
   async update(id: string, set: Partial<TicketDoc>): Promise<boolean> {
     const result = await TicketModel.updateOne({ _id: id }, { $set: set });
     return result.matchedCount === 1;
   }
 
-  /**
-   * Stores a classification in ONE atomic update. The effective category and
-   * priority only change when the admin has not overridden them; the check
-   * happens inside the update pipeline, so an override that lands while the
-   * model is running is never clobbered.
-   */
   async saveClassification(
     id: string,
     result: {
@@ -248,7 +225,6 @@ export class TicketRepository {
       confidence: number | null;
     },
   ) {
-    // $literal stops a value that happens to start with "$" being read as a field path.
     const lit = <T>(value: T) => ({ $literal: value });
     await TicketModel.updateOne({ _id: id }, [
       {
@@ -269,10 +245,6 @@ export class TicketRepository {
     ], { updatePipeline: true });
   }
 
-  /**
-   * Appends a public response and applies the new status atomically, and drops
-   * the cached AI draft (it no longer reflects the thread).
-   */
   async addResponse(
     id: string,
     response: { admin: string; adminName: string; message: string; usedAiDraft: boolean },
@@ -291,12 +263,6 @@ export class TicketRepository {
     return result.matchedCount === 1;
   }
 
-  /**
-   * Appends an author's follow-up and flags the ticket for support, unless it has
-   * reached a final stage or the thread is full (returns false). Both checks are
-   * in the update filter, so a reply racing an admin resolving the ticket can't
-   * slip in. Drops the cached AI draft, which was written before this message.
-   */
   async addAuthorReply(id: string, reply: { authorName: string; message: string }): Promise<boolean> {
     const result = await TicketModel.updateOne(
       { _id: id, statusRank: 0, [`responses.${MAX_THREAD_MESSAGES - 1}`]: { $exists: false } },
@@ -313,18 +279,10 @@ export class TicketRepository {
     return result.matchedCount === 1;
   }
 
-  /**
-   * Caches the draft without bumping updatedAt: drafts are admin-only, so
-   * generating one should not make every author/admin poll refetch.
-   */
   async saveDraft(id: string, draft: AiDraftSubdoc) {
     await TicketModel.updateOne({ _id: id }, { $set: { aiDraft: draft } }, { timestamps: false });
   }
 
-  /**
-   * Fills authorUpdatedAt on tickets created before the field existed, from the
-   * latest of creation, last reply and resolution. Safe to run on every boot.
-   */
   async backfillAuthorUpdatedAt(): Promise<number> {
     const result = await TicketModel.updateMany(
       { authorUpdatedAt: { $exists: false } },
@@ -342,7 +300,6 @@ export class TicketRepository {
     return rows.map((row) => row._id.toString());
   }
 
-  /** Ticket counts for each of these authors; authors without tickets are simply absent. */
   countsByAuthor(authorIds: string[]) {
     return TicketModel.aggregate<{ _id: string; total: number; unresolved: number }>([
       { $match: { authorId: { $in: authorIds } } },

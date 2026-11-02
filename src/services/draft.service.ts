@@ -16,22 +16,6 @@ import type { DraftContextRecord, TicketRepository } from '../repositories/ticke
 import type { UserRepository } from '../repositories/user.repository.js';
 import type { AiCallRecorder } from './ai-call-recorder.js';
 
-/**
- * AI-drafted replies, generated lazily when an admin opens a ticket and cached
- * on the ticket. A cached draft is reused until the admin asks to regenerate
- * or posts a response (which clears it), so repeated opens cost nothing.
- *
- * Degradation: if the model is unavailable (no key, outage, rate limit, open
- * circuit, blocked or invalid output) the admin gets a template starter reply
- * built from the same computed facts (`fallback: true`, `model: "template"`).
- * It is not cached, so the next request tries the model again. Only if even
- * the template cannot be built does the endpoint return 503 AI_UNAVAILABLE.
- *
- * A revision (the admin's suggestions applied to the current draft) always calls
- * the model and replaces the cached draft. It never degrades to the template,
- * which would ignore the suggestions and overwrite the admin's text: if the
- * model is unavailable it returns 503 AI_UNAVAILABLE and the text stays as it is.
- */
 export class DraftService {
   constructor(
     private readonly ai: AiService,
@@ -115,7 +99,6 @@ export class DraftService {
       },
       author: { name: ticket.authorUser?.name ?? 'there', city: author?.city ?? null },
       book,
-      // Already limited to the last few responses by the repository; internal notes are never loaded.
       thread: ticket.responses.map((response) => ({
         from: response.from ?? 'support',
         message: response.message,
@@ -125,11 +108,6 @@ export class DraftService {
     };
   }
 
-  /**
-   * The category decides which knowledge-base section the draft gets. If the
-   * ticket is still being classified, the placeholder "General Inquiry" would
-   * pick the wrong policy, so use the (free, instant) rules classifier instead.
-   */
   private categoryForDraft(ticket: DraftContextRecord, book: DraftInput['book']): TicketCategory {
     if (ticket.aiStatus === 'pending' && !ticket.categoryOverridden) {
       return classifyByRules({ subject: ticket.subject, description: ticket.description, book }).category;

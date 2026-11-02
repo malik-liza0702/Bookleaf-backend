@@ -6,12 +6,6 @@ import {
 } from './knowledgeBase.js';
 import type { BookContext } from './types.js';
 
-/**
- * Facts computed in code and handed to the model, so it never has to do date or
- * money arithmetic (which LLMs get wrong) or guess at policy thresholds.
- * All dates are UTC calendar dates in YYYY-MM-DD form.
- */
-
 const DAY_MS = 86_400_000;
 
 export function toIsoDate(d: Date): string {
@@ -35,11 +29,6 @@ function addDays(d: Date, days: number): Date {
   return new Date(d.getTime() + days * DAY_MS);
 }
 
-/**
- * The next royalty payout deadline as of `now`: the end of the most recent
- * quarter + 45 days if that deadline has not passed yet, otherwise the end of
- * the current quarter + 45 days.
- */
 export function nextRoyaltyPayout(now: Date): { quarterEnd: string; payoutBy: string } {
   const today = startOfDay(now);
   const q = Math.floor(now.getUTCMonth() / 3);
@@ -49,11 +38,6 @@ export function nextRoyaltyPayout(now: Date): { quarterEnd: string; payoutBy: st
   return { quarterEnd: toIsoDate(quarterEnd), payoutBy: toIsoDate(addDays(quarterEnd, PAYOUT_DAYS_AFTER_QUARTER)) };
 }
 
-/**
- * `possibly_overdue` is a flag, never an assertion: the record has the pending
- * total but not WHEN it was earned, so it may all be from a quarter that is not
- * due yet. Only finance can confirm a missed payout.
- */
 export type RoyaltyStatus =
   | 'not_published'
   | 'no_earnings_yet'
@@ -69,14 +53,8 @@ export interface RoyaltyFacts {
   paidInr: number;
   pendingInr: number;
   lastPayoutDate: string | null;
-  /** Deadline of the next scheduled payout run (end of last/current quarter + 45 days). */
   nextScheduledPayoutBy: string;
-  /** Deadline the pending amount falls under, when all of it is provably not yet due. */
   expectedPayoutBy: string | null;
-  /**
-   * possibly_overdue only: the earliest deadline some of the pending amount COULD
-   * have fallen under (if earned right after the last payout). Not proof of a miss.
-   */
   earliestPossibleDueDate: string | null;
 }
 
@@ -148,9 +126,6 @@ export function royaltyFacts(book: BookContext, now: Date): RoyaltyFacts {
     };
   }
 
-  // The pending amount accrued after the last payout (or since publication), but the
-  // record does not say when. If any of it was earned in that date's quarter, it was due
-  // 45 days after that quarter ended; if that deadline is still ahead, none of it can be late.
   const reference = parseDate(book.lastRoyaltyPayoutDate ?? book.publicationDate);
   const earliestDue = addDays(quarterEndOf(reference), PAYOUT_DAYS_AFTER_QUARTER);
   const since = book.lastRoyaltyPayoutDate
@@ -174,7 +149,6 @@ export function royaltyFacts(book: BookContext, now: Date): RoyaltyFacts {
 
 function productionFacts(book: BookContext): Pick<BookFacts, 'productionStage' | 'remainingStages' | 'stageNote'> {
   if (!book.isInProduction) return { productionStage: null, remainingStages: [], stageNote: null };
-  // Dataset statuses look like "In Production - Cover Design".
   const stage = book.status.split(' - ')[1]?.trim() ?? null;
   const index = stage ? PRODUCTION_STAGES.indexOf(stage) : -1;
   const remainingStages = index >= 0 ? PRODUCTION_STAGES.slice(index + 1) : [];

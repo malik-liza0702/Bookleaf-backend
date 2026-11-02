@@ -16,22 +16,12 @@ import {
   type TicketStatus,
 } from '../domain/enums.js';
 
-/**
- * Responses, internal notes and the cached AI draft are embedded in the ticket:
- * they are small, bounded per ticket, always read together with it, and never
- * queried on their own. Embedding also makes "append a response + change the
- * status" a single atomic update, with no multi-document transaction.
- *
- * The sender's name is copied into each response/note (like an email "From"
- * line) so rendering a thread needs no extra lookups.
- */
 export interface ResponseSubdoc {
   _id: Types.ObjectId;
-  /** Missing on replies stored before authors could reply; those are all from support. */
   from?: ResponseSender;
-  admin?: Types.ObjectId; // support replies only
-  adminName?: string; // support replies only
-  authorName?: string; // author replies only
+  admin?: Types.ObjectId;
+  adminName?: string;
+  authorName?: string;
   message: string;
   usedAiDraft: boolean;
   createdAt: Date;
@@ -49,7 +39,6 @@ export interface AiDraftSubdoc {
   text: string;
   model: string;
   fallback: boolean;
-  /** Things to double-check before sending (e.g. an amount not in the book record). */
   warnings: string[];
   generatedAt: Date;
 }
@@ -61,11 +50,11 @@ export interface Attachment {
 
 export interface TicketDoc {
   _id: Types.ObjectId;
-  number: number; // rendered as TKT-0001
-  authorId: string; // AUTH001
-  authorUser: Types.ObjectId; // the author's User, for name/email
-  bookId: string | null; // BK001
-  queryType: QueryType | null; // null on tickets raised before the field existed
+  number: number;
+  authorId: string;
+  authorUser: Types.ObjectId;
+  bookId: string | null;
+  queryType: QueryType | null;
   subject: string;
   description: string;
   attachments: Attachment[];
@@ -73,7 +62,6 @@ export interface TicketDoc {
   status: TicketStatus;
   resolvedAt: Date | null;
 
-  // Effective values: the AI (or rules) value unless an admin overrode them.
   category: TicketCategory;
   priority: TicketPriority;
   categoryOverridden: boolean;
@@ -85,8 +73,6 @@ export interface TicketDoc {
   aiReasoning: string | null;
   aiConfidence: number | null;
 
-  // Stored sort keys for the "urgency" sort, kept in sync with status/priority
-  // by the repository. Lets MongoDB serve that sort straight from an index.
   statusRank: number;
   priorityRank: number;
 
@@ -94,11 +80,8 @@ export interface TicketDoc {
   responses: ResponseSubdoc[];
   internalNotes: NoteSubdoc[];
   aiDraft: AiDraftSubdoc | null;
-  // The author's follow-up is waiting for an answer. New tickets show up as Open instead.
   needsReply: boolean;
 
-  // Last change the author can see: creation, a reply or a status change. Admin
-  // work (notes, assignment, category, priority, classification) leaves it alone.
   authorUpdatedAt: Date;
 
   createdAt: Date;
@@ -176,14 +159,11 @@ const ticketSchema = new Schema<TicketDoc>(
     authorUpdatedAt: { type: Date, required: true },
   },
   {
-    // createdAt/updatedAt maintained by Mongoose on create AND on every
-    // update query ($set/$push alike), which the polling endpoints rely on.
     timestamps: true,
     toJSON: { virtuals: false },
   },
 );
 
-// Book title is looked up by business key when rendering a ticket.
 ticketSchema.virtual('book', {
   ref: 'Book',
   localField: 'bookId',
@@ -191,13 +171,13 @@ ticketSchema.virtual('book', {
   justOne: true,
 });
 
-ticketSchema.index({ statusRank: 1, priorityRank: 1, createdAt: 1 }); // urgency sort
-ticketSchema.index({ status: 1, priority: 1, createdAt: 1 }); // admin filters
-ticketSchema.index({ authorId: 1, authorUpdatedAt: -1 }); // author's list, newest visible update first
-ticketSchema.index({ updatedAt: 1 }); // ?updatedSince= polling
-ticketSchema.index({ createdAt: -1 }); // newest/oldest sorts, date range
+ticketSchema.index({ statusRank: 1, priorityRank: 1, createdAt: 1 });
+ticketSchema.index({ status: 1, priority: 1, createdAt: 1 });
+ticketSchema.index({ authorId: 1, authorUpdatedAt: -1 });
+ticketSchema.index({ updatedAt: 1 });
+ticketSchema.index({ createdAt: -1 });
 ticketSchema.index({ assignedTo: 1 });
-ticketSchema.index({ needsReply: 1 }); // admin filter
-ticketSchema.index({ aiStatus: 1 }); // re-queue pending classifications on boot
+ticketSchema.index({ needsReply: 1 });
+ticketSchema.index({ aiStatus: 1 });
 
 export const TicketModel = model<TicketDoc>('Ticket', ticketSchema);

@@ -23,10 +23,6 @@ import {
   updateTicketBody,
 } from '../schemas/ticket.schema.js';
 
-/**
- * The whole v1 route table in one place, so auth, RBAC and validation for
- * every endpoint can be reviewed at a glance.
- */
 export function createApiRouter(container: Container): Router {
   const router = Router();
   const auth = createAuthController(container.authService);
@@ -39,14 +35,12 @@ export function createApiRouter(container: Container): Router {
   const adminOnly = requireRole('admin');
   const authorOnly = requireRole('author');
 
-  // Public
   router.get('/health', (_req, res) => {
     const dbUp = mongoose.connection.readyState === 1;
     res.status(dbUp ? 200 : 503).json({ status: dbUp ? 'ok' : 'degraded' });
   });
   router.post('/auth/login', validate({ body: loginBody }), auth.login);
 
-  // Everything below requires a valid token
   router.use(requireAuth);
 
   router.get('/auth/me', auth.me);

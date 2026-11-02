@@ -21,7 +21,6 @@ export class NotificationRepository {
     return { rows, total, unreadCount };
   }
 
-  /** Marks the user's unread notifications as read, optionally for one ticket. */
   async markRead(userId: string, ticketId?: string): Promise<number> {
     const query: QueryFilter<NotificationDoc> = { user: userId, readAt: null };
     if (ticketId) query.ticket = ticketId;

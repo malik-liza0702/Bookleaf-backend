@@ -1,9 +1,3 @@
-/**
- * Idempotent seed: safe to run any number of times.
- * Users/authors/books are upserted by email / authorId / bookId. No tickets are seeded.
- *
- * Run: npm run db:seed   (uses MONGODB_URI and MONGODB_DB_NAME, default `bookleaf`)
- */
 import bcrypt from 'bcryptjs';
 import { readFileSync } from 'node:fs';
 import { dirname, join } from 'node:path';
@@ -28,7 +22,6 @@ const ADMINS = [
 const here = dirname(fileURLToPath(import.meta.url));
 const DATASET_PATH = join(here, '..', '..', 'data', 'bookleaf_sample_data.json');
 
-// The dataset is validated before anything is written, so a malformed file fails loudly.
 const bookSchema = z.object({
   book_id: z.string(),
   title: z.string(),

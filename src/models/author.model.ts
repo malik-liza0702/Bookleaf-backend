@@ -1,9 +1,8 @@
 import { Schema, model, type Types } from 'mongoose';
 
-/** Author profile, 1:1 with a User of role "author". */
 export interface AuthorDoc {
   _id: Types.ObjectId;
-  authorId: string; // business key from the dataset, e.g. AUTH001
+  authorId: string;
   user: Types.ObjectId;
   phone: string | null;
   city: string | null;

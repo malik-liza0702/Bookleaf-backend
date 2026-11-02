@@ -17,11 +17,6 @@ export class NotificationService {
     private readonly logger: Logger,
   ) {}
 
-  /**
-   * Tells the ticket's author about a reply or status change. The change itself
-   * is already saved and must not fail because of this, so failures to write
-   * are logged and swallowed.
-   */
   async notifyAuthor(
     ticket: Pick<TicketDoc, '_id' | 'authorUser' | 'number' | 'subject'>,
     event: Pick<NotificationDoc, 'type' | 'status'>,

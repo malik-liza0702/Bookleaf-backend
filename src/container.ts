@@ -17,11 +17,6 @@ import { DraftService } from './services/draft.service.js';
 import { NotificationService } from './services/notification.service.js';
 import { TicketService } from './services/ticket.service.js';
 
-/**
- * Composition root: the one place where concrete classes are wired together.
- * Everything else receives its dependencies through constructors, which is
- * what lets tests swap the AI service for a fake.
- */
 export function createContainer(config: AppConfig, logger: Logger, overrides: { ai?: AiService } = {}) {
   const ai = overrides.ai ?? createAiService(config.ai);
 

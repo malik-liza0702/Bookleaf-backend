@@ -4,7 +4,7 @@ Two sessions build the backend at the same time. This file fixes the seam betwee
 
 ## Ownership
 - **AI session (bookleaf-97)** owns `src/ai/**` and `tests/ai/**`. Nothing else.
-- **Core session (main backend agent)** owns everything else: `package.json`/lockfile, `prisma/`, config/env loading, Express app, routes, middleware, services, seed, OpenAPI, README, Docker.
+- **Core session (main backend agent)** owns everything else: `package.json`/lockfile, `prisma/`, config/env loading, Express app, routes, middleware, services, seed, OpenAPI, README.
 - Need a dependency? The AI session asks the core session; it never edits `package.json` and never runs `npm install <pkg>`. `@google/genai` and `zod` are core dependencies.
 - The AI module is **pure**: no Prisma, no Express, no `process.env`. It takes plain inputs and returns plain outputs. The core session persists results and writes `AiCallLog` rows from the `usage`/`error` fields.
 

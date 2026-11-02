@@ -17,7 +17,6 @@ import {
   type ClassifyInput,
 } from './types.js';
 
-/** The model's answer is validated, never trusted: enums must match exactly. */
 export const ModelClassificationSchema = z.object({
   reasoning: z.string().trim().min(1).max(600),
   category: z.enum(TICKET_CATEGORIES),
@@ -26,10 +25,8 @@ export const ModelClassificationSchema = z.object({
 });
 export type ModelClassification = z.infer<typeof ModelClassificationSchema>;
 
-/** Output budget includes thinking tokens; the JSON itself is ~60 tokens. */
 export const CLASSIFY_MAX_OUTPUT_TOKENS = 512;
 const LOW_CONFIDENCE = 0.6;
-/** One retry when the model answers but the JSON is unusable. Transport retries happen below this. */
 const MAX_PARSE_ATTEMPTS = 2;
 
 export function parseModelClassification(text: string): ModelClassification | null {
@@ -87,7 +84,6 @@ export async function classifyTicket(
       const error = err instanceof ModelCallError ? err : new ModelCallError('UNKNOWN', String(err));
       usage = addUsage(usage, error.usage);
       lastError = { code: error.code, message: error.message };
-      // Transport failures were already retried with backoff; only a bad answer earns another try here.
       if (error.code !== 'INVALID_OUTPUT') break;
     }
   }
